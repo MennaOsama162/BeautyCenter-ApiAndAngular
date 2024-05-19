@@ -162,7 +162,6 @@ namespace BeautyCenter_.Net_Angular.Controllers
 
         //Adding new PackageUser:
         [HttpPost]
-        [Authorize]
         public ActionResult addPackageUser(PackageUserDTO newPackageUser)
         {
             Package package = unit.PackageRepository.selectbyid(newPackageUser.PackageId);
@@ -199,7 +198,6 @@ namespace BeautyCenter_.Net_Angular.Controllers
 
         //Update:
         [HttpPut]
-        [Authorize]
         public ActionResult updatePackageUser(int userId, int packageId, DateTime date)
         {
             // Fetch the existing PackageUser
@@ -227,7 +225,6 @@ namespace BeautyCenter_.Net_Angular.Controllers
         //Delete by Composite key:
 
         [HttpDelete("{userId:int}/{packageId:int}")]
-        [Authorize]
         public ActionResult deletePackageUserByID(int userId,int packageId)
         {
             PackageUser packageUser= unit.PackageUserRepository.getByCompositeKeyPU(userId,packageId);
@@ -241,6 +238,24 @@ namespace BeautyCenter_.Net_Angular.Controllers
                 unit.PackageUserRepository.save();
                 return Ok("Deleted Successfully");
             }       
+        }
+        //--------------------------------------------------------------
+        //Delete by UserID:
+
+        [HttpDelete("{userId:int}")]
+        public ActionResult deleteAllPckageUserByUserId(int userId)
+        {
+            List<PackageUser> packageUser = unit.PackageUserRepository.getUserPackageByCompositeUserID(userId);
+            if (packageUser == null)
+            {
+                return NotFound();
+            }
+            else
+            {
+                unit.PackageUserRepository.deletepackagesUserByuserId(packageUser);
+                unit.PackageUserRepository.save();
+                return Ok("Deleted Successfully");
+            }
         }
         //-----------------------------------------------------------
 
@@ -260,6 +275,11 @@ namespace BeautyCenter_.Net_Angular.Controllers
                 return Ok("Done");
             }
         }
+
+        //-----------------------------------------------------------------------------------------------
+        //Delete By UserID
+
+
 
     }
 }

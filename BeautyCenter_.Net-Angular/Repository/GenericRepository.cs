@@ -29,14 +29,32 @@ namespace BeautyCenter_.Net_Angular.Repository
         {
             return db.Set<type>().ToList();
         }
-        public List<Package> selectallPackagesWithServices()
+        public List<Package> SelectAllPackagesWithServices()
         {
-            return db.Packages.Include(s=> s.Services).ToList();
+            var packagesWithServices = db.Packages
+                .Include(p => p.PackageServices) // Include the PackageServices navigation property
+                .ThenInclude(ps => ps.Service)   // Include the Service navigation property within PackageServices
+                .ToList();
+
+            return packagesWithServices;
         }
-        public Package selectallPackagesWithServicesID(int id)
+
+
+
+        public Package SelectPackageWithServicesById(int packageId)
         {
-            return db.Packages.Include(s => s.Services).First(s => s.Id == id);
+            var packageWithServices = db.Packages
+                .Include(p => p.PackageServices) // Include the PackageServices navigation property
+                .ThenInclude(ps => ps.Service)   // Include the Service navigation property within PackageServices
+                .FirstOrDefault(p => p.Id == packageId); // Fetch the package by its ID
+
+            return packageWithServices;
         }
+
+        //public Package selectallPackagesWithServicesID(int id)
+        //{
+        //    return db.Packages.Include(s => s.Services).First(s => s.Id == id);
+        //}
 
         public type selectbyid(int id)
         {
@@ -73,7 +91,7 @@ namespace BeautyCenter_.Net_Angular.Repository
         }
 
        
-        public PackageUser getByCompositeKeyPU(int packageId, int userId)
+        public PackageUser getByCompositeKeyPU(int userId,int packageId)
         {
             return db.Set<PackageUser>()
             .Include(pu => pu.Package) // Include the Package navigation property
@@ -83,7 +101,7 @@ namespace BeautyCenter_.Net_Angular.Repository
         }
 
 
-        public UserService getByCompositeKeyUS(int ServiceId, int userId)
+        public UserService getByCompositeKeyUS( int userId,int ServiceId)
         {
             return db.Set<UserService>()
             .Include(us => us.Service) // Include the Service navigation property
@@ -91,10 +109,51 @@ namespace BeautyCenter_.Net_Angular.Repository
             .FirstOrDefault(us => us.ServiceId == ServiceId && us.UserId == userId);
 
         }
+        public List<UserService> getUserServiceByCompositeUserID(int userId)
+        {
+            return db.Set<UserService>()
+            .Include(us => us.Service) // Include the Service navigation property
+            .Include(us => us.User)    // Include the User navigation property
+            .Where(us=>us.UserId == userId).ToList();   
+
+        }
+        public List<PackageUser> getUserPackageByCompositeUserID(int userId)
+        {
+            return db.Set<PackageUser>()
+            .Include(us => us.Package) // Include the Service navigation property
+            .Include(us => us.User)    // Include the User navigation property
+            .Where(us => us.UserId == userId).ToList();
+
+        }
+
         public void deleteByCompositeKeyG(int forignId1, int forignId2)
         {
             type obj = db.Set<type>().Find(forignId1, forignId2);
             db.Set<type>().Remove(obj);
+        }
+        public void deletepackagesUserByuserId(List<PackageUser> packagesUsers)
+        {
+            foreach (var item in packagesUsers)
+            {
+                PackageUser obj = db.Set<PackageUser>().Find(item.UserId, item.PackageId);
+                if (obj != null) // It's a good practice to check if the object is found
+                {
+                    db.Set<PackageUser>().Remove(obj);
+                }
+            }
+
+        }
+        public void deleteServicesUserByuserId(List<UserService> servicessUsers)
+        {
+            foreach (var item in servicessUsers)
+            {
+                UserService obj = db.Set<UserService>().Find(item.UserId, item.ServiceId);
+                if (obj != null) // It's a good practice to check if the object is found
+                {
+                    db.Set<UserService>().Remove(obj);
+                }
+            }
+
         }
         public List<PackageUser> getByUserIdfromPU(int userId)
         {
@@ -173,6 +232,20 @@ namespace BeautyCenter_.Net_Angular.Repository
             type obj = db.Set<type>().Find(id);
             db.Set<type>().Remove(obj);
         }
+
+        public void deletePackageService(int packageId)
+        {
+            var packageServicesToRemove = db.Set<PackageService>()
+                                               .Where(ps => ps.PackageId == packageId)
+                                               .ToList();
+
+            // Remove each PackageService entity from the DbSet
+            foreach (var packageService in packageServicesToRemove)
+            {
+                db.Set<PackageService>().Remove(packageService);
+            }
+        }
+
         //here getting service by category
         public List<ServiceResponse> GetServicesByCategory(string Categ)
         {
@@ -180,11 +253,32 @@ namespace BeautyCenter_.Net_Angular.Repository
             List<ServiceResponse> ls =db.Services.Where(s => s.Category == Categ).ToList();
             return ls;
         }
+  /////////////////////////////////////////////////////////////////////////////////////////////////////
+        ///here e7tyaty
+        //public List<ServiceResponse> GetServicesByName(string Name)
+        //{
 
-        public List<ServiceResponse> GetServicesByName(string Name)
+        //    List<ServiceResponse> ls = db.Services.Where(s => s.Name == Name).ToList();
+        //    return ls;
+        //}
+
+        public ServiceResponse GetServicesByName(string Name)
         {
 
-            List<ServiceResponse> ls = db.Services.Where(s => s.Name == Name).ToList();
+            ServiceResponse ls = db.Services.SingleOrDefault(s => s.Name == Name);
+            return ls;
+        }
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        public List<string> GetAllCategories()
+        {
+            List<string> ls = db.Services.Select(s=>s.Category).Distinct().ToList();
+            return ls;
+        }
+
+        public List<string> GetAllServicesName()
+        {
+            List<string> ls = db.Services.Select(s => s.Name).Distinct().ToList();
             return ls;
         }
 
@@ -198,7 +292,6 @@ namespace BeautyCenter_.Net_Angular.Repository
         {
             db.SaveChanges();
         }
-
 
        
     }
